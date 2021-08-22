@@ -1,11 +1,14 @@
-import os, sys, argparse, pickle, md5
+import os, sys, argparse, pickle, hashlib
 import json
 
-from sources import aws
+from privvy.sources import aws
 
 sys.stdin = open('/dev/tty')
 
-MD5_PATH = os.path.join(os.path.dirname(__file__), "..", "md5s.pkl")
+PRIVVY_USER_FILES = os.path.join(os.path.expanduser("~"), ".privvy")
+if not os.path.exists(PRIVVY_USER_FILES):
+    os.makedirs(PRIVVY_USER_FILES)
+MD5_PATH = os.path.join(PRIVVY_USER_FILES, "md5s.pkl")
 MD5_DICT = {}
 
 METHODS = {
@@ -31,7 +34,7 @@ def sync(mode):
             if not exists:
                 continue
 
-            reply = raw_input("[Privvy] Private file {path} has been changed. Push new changes?".format(
+            reply = input("[Privvy] Private file {path} has been changed. Push new changes?".format(
                 path=filepath
             ))
 
@@ -41,7 +44,7 @@ def sync(mode):
         method = _get_source_method(source)
         file_changed = getattr(method, mode)(filepath, source, mapping=info.get("env_mapping", {}))
         if file_changed:
-            MD5_DICT[source] = md5.md5(open(filepath, "rb").read()).hexdigest()
+            MD5_DICT[source] = hashlib.md5(open(filepath, "rb").read()).hexdigest()
 
     pickle.dump(MD5_DICT, open(MD5_PATH, 'wb'))
     return
@@ -58,9 +61,9 @@ def _check_file(root, filepath, source):
     resolved = os.path.join(root, filepath)
 
     if not os.path.exists(resolved):
-        return resolved, True, False
+        return resolved, False, True
 
-    current_md5 = md5.md5(open(resolved, "rb").read()).hexdigest()
+    current_md5 = hashlib.md5(open(resolved, "rb").read()).hexdigest()
     saved_md5 = MD5_DICT.get(source)
 
     return resolved, True, current_md5 != saved_md5

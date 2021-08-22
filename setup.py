@@ -2,25 +2,20 @@
 import os
 
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
 
 setup(
     name="privvy",
     version='0.1',
-    description='Indico private files sync service',
-    author='indico',
-    author_email='contact@indico.io',
-    url='https://indico.io',
+    description='Syncing private files gitignored in git repositories',
+    author='Chris Lee',
+    author_email='chris@indico.io',
     packages=find_packages(),
+    scripts=[ "bin/privvy-pull", "bin/privvy-push", "bin/privvy-init" ],
+    include_package_data=True,
+    package_data={ "": [ "hooks/pre-push", "hooks/pre-receive" ] },
     install_requires=[
-        str(item.req) for item in
-        parse_requirements(os.path.join(
+        open(os.path.join(
                 os.path.dirname(__file__),
-                "requirements.txt"
-        ), session=False)
+                "requirements.txt"), "r").readlines()
     ]
 )
-
-import privvy
-
-privvy.setup()
